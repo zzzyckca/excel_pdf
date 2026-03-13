@@ -129,6 +129,10 @@ def convert_file(file_path):
     return success, file_name_with_ext, abs_file_path, error_msg, start_dt, end_dt, elapsed
 
 def main():
+    # Force UTF-8 encoding in the Windows Console to prevent charmap UnicodeEncodeErrors with filenames
+    if hasattr(sys.stdout, 'reconfigure'):
+        sys.stdout.reconfigure(encoding='utf-8')
+        
     print("-" * 50)
     print("Excel to PDF Batch Converter (Multiprocessing - Local Copy V2)")
     print("-" * 50)
@@ -246,10 +250,10 @@ def main():
                 })
                 
                 if success:
-                    print(f"[✓] SUCCESS : {filename} (in {elapsed:.2f}s) -> Copied back to network.")
+                    print(f"[OK] SUCCESS : {filename} (in {elapsed:.2f}s) -> Copied back to network.")
                     success_count += 1
                 else:
-                    print(f"[x] ERROR   : {filename} - {err_msg}")
+                    print(f"[FAIL] ERROR   : {filename} - {err_msg}")
                     error_count += 1
                     failed_files.append((filename, err_msg))
     
@@ -289,9 +293,9 @@ def main():
             
             try:
                 df.to_excel(report_path, index=False)
-                print(f"[✓] Saved Excel report to: {report_path}")
+                print(f"[OK] Saved Excel report to: {report_path}")
             except Exception as e:
-                print(f"[x] Failed to save Excel report: {e}")
+                print(f"[FAIL] Failed to save Excel report: {e}")
 
     finally:
         # Guarantee the drive is unmapped at the very end regardless of success or crash
@@ -303,7 +307,7 @@ def main():
         try:
             if local_temp_dir.exists():
                 shutil.rmtree(local_temp_dir, ignore_errors=True)
-            print("[✓] Cleanup complete.")
+            print("[OK] Cleanup complete.")
         except Exception as e:
             print(f"[!] Failed to clean up temp directory: {e}")
 
