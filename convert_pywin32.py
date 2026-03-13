@@ -18,6 +18,8 @@ import sys
 INPUT_DIR = r"c:\Users\yckde\Documents\GitHub\excel_pdf\test"
 # Configure which drive letter to map the path to bypass long path limits
 MAPPED_DRIVE_LETTER = "M:"
+# Set the maximum number of parallel processes. Leave as "" or None to automatically use (Total CPU Cores - 1).
+MAX_PROCESSES = ""
 # ==========================================
 
 def map_drive(input_dir):
@@ -162,9 +164,18 @@ def main():
             
         print(f"Found {len(excel_files)} Excel file(s).")
         
-        # Determine number of processes (use max cores - 1 to leave room for OS, or at least 1)
-        num_processes = max(1, multiprocessing.cpu_count() - 1)
-        print(f"Starting conversion using {num_processes} parallel process(es)...")
+        # Determine number of processes
+        if MAX_PROCESSES != "" and MAX_PROCESSES is not None and str(MAX_PROCESSES).strip() != "":
+            try:
+                num_processes = max(1, int(MAX_PROCESSES))
+                print(f"Starting conversion using manually specified {num_processes} parallel process(es)...")
+            except ValueError:
+                num_processes = max(1, multiprocessing.cpu_count() - 1)
+                print(f"[!] Invalid MAX_PROCESSES value. Auto-detecting {num_processes} parallel process(es)...")
+        else:
+            num_processes = max(1, multiprocessing.cpu_count() - 1)
+            print(f"Starting conversion using auto-detected {num_processes} parallel process(es) (Cores - 1)...")
+            
         print("-" * 60)
         
         # Run the multiprocessing pool

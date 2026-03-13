@@ -23,13 +23,17 @@ This Python script (`convert_pywin32.py`) provides a robust, high-performance so
 
 1. Move the `convert_pywin32.py` script to your local machine or Windows Server.
 2. Open `convert_pywin32.py` in your chosen text editor or IDE.
-3. Modify the `INPUT_DIR` path located at the very top of the script in the Configuration section to point to your folder containing Excel files. The script will automatically save the generated PDFs in the same folder alongside their original Excel files:
+3. Modify the configuration paths located at the very top of the script:
    ```python
    # ==========================================
    # CONFIGURATION
    # ==========================================
    # Define your input folder here. PDFs will be saved in the same directory.
    INPUT_DIR = r"c:\Users\yckde\Documents\GitHub\excel_pdf\test"
+   # Configure which drive letter to map the path to bypass long path limits
+   MAPPED_DRIVE_LETTER = "M:"
+   # Set the maximum number of parallel processes. Leave as "" or None to automatically use (Total CPU Cores - 1).
+   MAX_PROCESSES = ""
    # ==========================================
    ```
 4. Run the script from the command prompt, PowerShell, or your IDE:
