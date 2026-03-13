@@ -16,6 +16,8 @@ import sys
 # ==========================================
 # Define your input folder here. PDFs will be saved in the same directory.
 INPUT_DIR = r"c:\Users\yckde\Documents\GitHub\excel_pdf\test"
+# Define the folder where summary reports will be saved
+REPORT_DIR = r"c:\Users\yckde\Documents\GitHub\excel_pdf\reports"
 # Configure which drive letter to map the path to bypass long path limits
 MAPPED_DRIVE_LETTER = "M:"
 # Set the maximum number of parallel processes. Leave as "" or None to automatically use (Total CPU Cores - 1).
@@ -229,9 +231,16 @@ def main():
             print("\nExporting Summary Report to Excel...")
             df = pd.DataFrame(summary_data)
             
-            # Since input_dir might be "M:\", we need to make sure we don't save to the root of a drive letter if possible
-            # Save it explicitly to the original unmapped location so it's easy to find
-            report_path = os.path.join(INPUT_DIR, "conversion_summary_report.xlsx")
+            # Create the report directory if it does not exist
+            if not os.path.exists(REPORT_DIR):
+                os.makedirs(REPORT_DIR)
+                
+            # Generate the report filename based on the layout: report_YYYY_MM_DD_HH_MM.xlsx
+            start_dt_obj = datetime.fromtimestamp(overall_start_time)
+            report_filename = start_dt_obj.strftime("report_%Y_%m_%d_%H_%M.xlsx")
+            
+            # Save it explicitly to the REPORT_DIR
+            report_path = os.path.join(REPORT_DIR, report_filename)
             
             try:
                 df.to_excel(report_path, index=False)

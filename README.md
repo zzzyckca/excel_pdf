@@ -30,6 +30,8 @@ This Python script (`convert_pywin32.py`) provides a robust, high-performance so
    # ==========================================
    # Define your input folder here. PDFs will be saved in the same directory.
    INPUT_DIR = r"c:\Users\yckde\Documents\GitHub\excel_pdf\test"
+   # Define the folder where summary reports will be saved
+   REPORT_DIR = r"c:\Users\yckde\Documents\GitHub\excel_pdf\reports"
    # Configure which drive letter to map the path to bypass long path limits
    MAPPED_DRIVE_LETTER = "M:"
    # Set the maximum number of parallel processes. Leave as "" or None to automatically use (Total CPU Cores - 1).
@@ -80,7 +82,7 @@ To ensure stability across crashes, the script implements proactive networking c
 The script uses the native Excel function `ExportAsFixedFormat` with `Type=0` (`xlTypePDF`). The `0` argument is critical, as it bypasses page-by-page printing and signals Excel to dump the *entire workbook* (all visible sheets) sequentially into a single PDF output file.
 
 ### 7. Pandas Export & Summary Report
-While processing, the script gathers detailed telemetry (start time, end time, elapsed seconds, and error reasons). Once all files are processed, it uses `pandas` to compile this data into a structured DataFrame. Any temporary `M:\` drive paths used for the long-path bypass are automatically translated back to their full, original directory paths inside the report. This data is then exported as a `conversion_summary_report.xlsx` file inside the root of your `INPUT_DIR` for easy auditing.
+While processing, the script gathers detailed telemetry (start time, end time, elapsed seconds, and error reasons). Once all files are processed, it uses `pandas` to compile this data into a structured DataFrame. Any temporary `M:\` drive paths used for the long-path bypass are automatically translated back to their full, original directory paths inside the report. This data is then exported into your designated `REPORT_DIR`. The file is dynamically named using the script's exact start time (e.g., `report_2026_03_12_22_45.xlsx`) for easy auditing and record-keeping without overwriting previous runs.
 
 ### 8. Memory Cleanup
 A crucial final step is `excel.Quit()` combined with `pythoncom.CoUninitialize()`. This ensures that once the PDF is generated, the detached `EXCEL.EXE` background process is immediately killed, freeing up RAM for the next file in the multiprocessing queue.
