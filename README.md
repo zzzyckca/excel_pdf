@@ -76,7 +76,7 @@ To ensure stability across crashes, the script implements proactive networking c
 The script uses the native Excel function `ExportAsFixedFormat` with `Type=0` (`xlTypePDF`). The `0` argument is critical, as it bypasses page-by-page printing and signals Excel to dump the *entire workbook* (all visible sheets) sequentially into a single PDF output file.
 
 ### 7. Pandas Export & Summary Report
-While processing, the script gathers detailed telemetry (start time, end time, elapsed seconds, and error reasons). Once all files are processed, it uses `pandas` to compile this data into a structured DataFrame. This data is then exported as a `conversion_summary_report.xlsx` file inside the root of your `INPUT_DIR` for easy auditing.
+While processing, the script gathers detailed telemetry (start time, end time, elapsed seconds, and error reasons). Once all files are processed, it uses `pandas` to compile this data into a structured DataFrame. Any temporary `M:\` drive paths used for the long-path bypass are automatically translated back to their full, original directory paths inside the report. This data is then exported as a `conversion_summary_report.xlsx` file inside the root of your `INPUT_DIR` for easy auditing.
 
 ### 8. Memory Cleanup
 A crucial final step is `excel.Quit()` combined with `pythoncom.CoUninitialize()`. This ensures that once the PDF is generated, the detached `EXCEL.EXE` background process is immediately killed, freeing up RAM for the next file in the multiprocessing queue.

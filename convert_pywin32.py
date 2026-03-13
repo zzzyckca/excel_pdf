@@ -2,6 +2,7 @@ import win32com.client
 import time
 import os
 import glob
+import multiprocessing
 import traceback
 import pythoncom
 import subprocess
@@ -172,11 +173,14 @@ def main():
             for result in pool.imap_unordered(convert_file, excel_files):
                 success, filename, abs_path, err_msg, start_dt, end_dt, elapsed = result
                 
+                # Translate the mapped drive back to the original path for the report
+                original_full_path = abs_path.replace(MAPPED_DRIVE_LETTER, INPUT_DIR, 1)
+                
                 # Add to pandas collection dictionary
                 row_status = "SUCCESS" if success else "FAILED"
                 summary_data.append({
                     "file_name": filename,
-                    "file_full_path": abs_path,
+                    "file_full_path": original_full_path,
                     "status": row_status,
                     "start_time": start_dt,
                     "completed/failure_time": end_dt,
