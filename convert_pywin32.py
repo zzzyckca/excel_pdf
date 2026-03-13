@@ -9,17 +9,15 @@ import pythoncom
 # ==========================================
 # CONFIGURATION
 # ==========================================
-# Define your input and output folders here.
+# Define your input folder here. PDFs will be saved in the same directory.
 INPUT_DIR = r"c:\Users\yckde\Documents\GitHub\excel_pdf\test"
-OUTPUT_DIR = r"c:\Users\yckde\Documents\GitHub\excel_pdf\pdf"
 # ==========================================
 
-def convert_file(args):
+def convert_file(file_path):
     """
     Worker function to convert a single Excel file to PDF.
     Runs in a dedicated background process.
     """
-    file_path, output_folder = args
     
     # Initialize COM for this specific thread
     pythoncom.CoInitialize()
@@ -40,7 +38,7 @@ def convert_file(args):
     abs_file_path = os.path.abspath(file_path)
     file_name_with_ext = os.path.basename(abs_file_path)
     file_name = os.path.splitext(file_name_with_ext)[0]
-    output_pdf_path = os.path.abspath(os.path.join(output_folder, f"{file_name}.pdf"))
+    output_pdf_path = os.path.abspath(os.path.join(os.path.dirname(abs_file_path), f"{file_name}.pdf"))
     
     start_time = time.time()
     wb = None
@@ -85,14 +83,10 @@ def main():
 
     # Use global constants
     input_dir = INPUT_DIR
-    output_dir = OUTPUT_DIR
     
     if not os.path.exists(input_dir):
         print(f"ERROR: Input folder '{input_dir}' does not exist.")
         return
-        
-    if not os.path.exists(output_dir):
-        os.makedirs(output_dir)
         
     excel_files = glob.glob(os.path.join(input_dir, "*.xls*"))
     
@@ -108,7 +102,7 @@ def main():
     print("-" * 60)
     
     # Prepare arguments for the worker function
-    pool_args = [(f, output_dir) for f in excel_files]
+    pool_args = excel_files
     
     success_count = 0
     error_count = 0
