@@ -63,22 +63,6 @@ def convert_file(file_path):
     Runs in a dedicated background process.
     """
     
-    # Initialize COM for this specific thread
-    pythoncom.CoInitialize()
-    
-    # Needs to be DispatchEx to launch a new, separate Excel process for safety
-    try:
-        excel = win32com.client.DispatchEx("Excel.Application")
-    except Exception as e:
-        pythoncom.CoUninitialize()
-        return False, file_path, f"Failed to start Excel: {e}", 0
-        
-    # Strict background execution settings
-    excel.Visible = False
-    excel.DisplayAlerts = False
-    excel.EnableEvents = False
-    excel.Interactive = False
-    
     abs_file_path = os.path.abspath(file_path)
     file_name_with_ext = os.path.basename(file_path)
     file_name = os.path.splitext(file_name_with_ext)[0]
@@ -89,8 +73,29 @@ def convert_file(file_path):
     
     start_time = time.time()
     start_dt = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+    # Skip logic if PDF already exists
+    if os.path.exists(output_pdf_path):
+        return "SKIPPED", file_name_with_ext, abs_file_path, "PDF already exists", start_dt, start_dt, 0.0
+    
+    # Initialize COM for this specific thread
+    pythoncom.CoInitialize()
+    
+    # Needs to be DispatchEx to launch a new, separate Excel process for safety
+    try:
+        excel = win32com.client.DispatchEx("Excel.Application")
+    except Exception as e:
+        pythoncom.CoUninitialize()
+        return "FAILED", file_name_with_ext, abs_file_path, f"Failed to start Excel: {e}", start_dt, start_dt, 0.0
+        
+    # Strict background execution settings
+    excel.Visible = False
+    excel.DisplayAlerts = False
+    excel.EnableEvents = False
+    excel.Interactive = False
+    
     wb = None
-    success = False
+    status = "FAILED"
     error_msg = ""
     
     try:
@@ -100,7 +105,7 @@ def convert_file(file_path):
         # 0 corresponds to xlTypePDF
         # Exporting the entire workbook
         wb.ExportAsFixedFormat(0, output_pdf_path)
-        success = True
+        status = "SUCCESS"
         
     except Exception as e:
         error_msg = str(e)
@@ -123,7 +128,7 @@ def convert_file(file_path):
     end_dt = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     elapsed = end_time - start_time
     
-    return success, file_name_with_ext, abs_file_path, error_msg, start_dt, end_dt, elapsed
+    return status, file_name_with_ext, abs_file_path, error_msg, start_dt, end_dt, elapsed
 
 def main():
     # Force UTF-8 encoding in the Windows Console to prevent charmap UnicodeEncodeErrors with filenames
@@ -152,6 +157,7 @@ def main():
     try:
         success_count = 0
         error_count = 0
+        skipped_count = 0
         failed_files = []
         summary_data = []
     
@@ -188,25 +194,27 @@ def main():
         with multiprocessing.Pool(processes=num_processes) as pool:
             # pool.imap_unordered yields results as soon as they are ready
             for result in pool.imap_unordered(convert_file, excel_files):
-                success, filename, abs_path, err_msg, start_dt, end_dt, elapsed = result
+                status, filename, abs_path, err_msg, start_dt, end_dt, elapsed = result
                 
                 # Translate the mapped drive back to the original path for the report
                 original_full_path = abs_path.replace(MAPPED_DRIVE_LETTER, INPUT_DIR, 1)
                 
                 # Add to pandas collection dictionary
-                row_status = "SUCCESS" if success else "FAILED"
                 summary_data.append({
                     "file_name": filename,
                     "file_full_path": original_full_path,
-                    "status": row_status,
+                    "status": status,
                     "start_time": start_dt,
                     "completed/failure_time": end_dt,
                     "number of seconds": round(elapsed, 2)
                 })
                 
-                if success:
+                if status == "SUCCESS":
                     print(f"[OK] SUCCESS : {filename} (in {elapsed:.2f}s)")
                     success_count += 1
+                elif status == "SKIPPED":
+                    print(f"[-] SKIPPED : {filename} (PDF already exists)")
+                    skipped_count += 1
                 else:
                     print(f"[FAIL] ERROR   : {filename} - {err_msg}")
                     error_count += 1
@@ -221,6 +229,7 @@ def main():
         print("=" * 60)
         print(f"Total Files Processed : {len(excel_files)}")
         print(f"Successful Conversions: {success_count}")
+        print(f"Skipped Conversions   : {skipped_count}")
         print(f"Failed Conversions    : {error_count}")
         print(f"Total Time Elapsed    : {total_elapsed / 60:.2f} minutes ({total_elapsed:.2f} seconds)")
         
@@ -229,28 +238,28 @@ def main():
             for f, err in failed_files:
                 print(f" - {f}: {err}")
         print("=" * 60)
+    
+    # Export to Pandas DataFrame and Excel
+    if summary_data:
+        print("\nExporting Summary Report to Excel...")
+        df = pd.DataFrame(summary_data)
         
-        # Export to Pandas DataFrame and Excel
-        if summary_data:
-            print("\nExporting Summary Report to Excel...")
-            df = pd.DataFrame(summary_data)
+        # Create the report directory if it does not exist
+        if not os.path.exists(REPORT_DIR):
+            os.makedirs(REPORT_DIR)
             
-            # Create the report directory if it does not exist
-            if not os.path.exists(REPORT_DIR):
-                os.makedirs(REPORT_DIR)
-                
-            # Generate the report filename based on the layout: report_YYYY_MM_DD_HH_MM.xlsx
-            start_dt_obj = datetime.fromtimestamp(overall_start_time)
-            report_filename = start_dt_obj.strftime("report_%Y_%m_%d_%H_%M.xlsx")
-            
-            # Save it explicitly to the REPORT_DIR
-            report_path = os.path.join(REPORT_DIR, report_filename)
-            
-            try:
-                df.to_excel(report_path, index=False)
-                print(f"[OK] Saved Excel report to: {report_path}")
-            except Exception as e:
-                print(f"[FAIL] Failed to save Excel report: {e}")
+        # Generate the report filename based on the layout: report_YYYY_MM_DD_HH_MM.xlsx
+        start_dt_obj = datetime.fromtimestamp(overall_start_time)
+        report_filename = start_dt_obj.strftime("report_%Y_%m_%d_%H_%M.xlsx")
+        
+        # Save it explicitly to the REPORT_DIR
+        report_path = os.path.join(REPORT_DIR, report_filename)
+        
+        try:
+            df.to_excel(report_path, index=False)
+            print(f"[OK] Saved Excel report to: {report_path}")
+        except Exception as e:
+            print(f"[FAIL] Failed to save Excel report: {e}")
 
     finally:
         # Guarantee the drive is unmapped at the very end regardless of success or crash

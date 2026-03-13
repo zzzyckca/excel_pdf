@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Excel to PDF Converter Documentation</title>
+    <!-- highlight.js CSS (GitHub Dark theme) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/styles/github-dark.min.css">
+    <style>
+        
+@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500&display=swap');
+
+:root {
+    --bg-color: #f8fafc;
+    --text-main: #334155;
+    --text-muted: #64748b;
+    --heading-color: #0f172a;
+    --accent-color: #3b82f6;
+    --accent-hover: #2563eb;
+    --card-bg: #ffffff;
+    --border-color: #e2e8f0;
+    --code-bg: #f1f5f9;
+}
+
+body {
+    font-family: 'Roboto', -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+    background-color: var(--bg-color);
+    color: var(--text-main);
+    line-height: 1.7;
+    margin: 0;
+    padding: 60px 20px;
+}
+
+.container {
+    max-width: 850px;
+    margin: 0 auto;
+    background: var(--card-bg);
+    padding: 50px 70px;
+    border-radius: 12px;
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    border: 1px solid var(--border-color);
+}
+
+h1, h2, h3, h4, h5, h6 {
+    color: var(--heading-color);
+    font-weight: 700;
+    margin-top: 2.5rem;
+    margin-bottom: 1rem;
+    line-height: 1.3;
+}
+
+h1 {
+    font-size: 2.75rem;
+    margin-top: 0;
+    margin-bottom: 2rem;
+    font-weight: 800;
+    letter-spacing: -0.025em;
+    background: linear-gradient(to right, #1e40af, #3b82f6);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    border-bottom: none;
+}
+
+h2 {
+    font-size: 1.875rem;
+    border-bottom: 2px solid var(--border-color);
+    padding-bottom: 0.5rem;
+}
+
+h3 {
+    font-size: 1.5rem;
+}
+
+p {
+    margin-top: 0;
+    margin-bottom: 1.25rem;
+    font-size: 1.05rem;
+}
+
+a {
+    color: var(--accent-color);
+    text-decoration: none;
+    font-weight: 500;
+}
+
+a:hover {
+    color: var(--accent-hover);
+    text-decoration: underline;
+}
+
+ul, ol {
+    margin-top: 0;
+    margin-bottom: 1.25rem;
+    padding-left: 1.5rem;
+    font-size: 1.05rem;
+}
+
+li {
+    margin-bottom: 0.5rem;
+}
+
+/* Inline Code */
+code {
+    font-family: 'Fira Code', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    font-size: 0.875em;
+    background-color: var(--code-bg);
+    color: #ef4444; /* red-500 */
+    padding: 0.2em 0.4em;
+    border-radius: 0.25rem;
+    border: 1px solid #cbd5e1;
+}
+
+/* Code Blocks */
+pre {
+    margin-top: 0;
+    margin-bottom: 1.5rem;
+    border-radius: 0.5rem;
+    background-color: #0d1117; 
+    padding: 1.25rem;
+    overflow-x: auto;
+    box-shadow: inset 0 2px 4px 0 rgba(0, 0, 0, 0.06);
+    border: 1px solid #30363d;
+}
+
+pre code {
+    background-color: transparent;
+    color: #c9d1d9;
+    padding: 0;
+    border: none;
+    font-size: 0.9em;
+}
+
+/* highlight.js overrides */
+.hljs {
+    background: transparent !important;
+    padding: 0 !important;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 1.5rem;
+    font-size: 0.95rem;
+}
+
+th, td {
+    border: 1px solid var(--border-color);
+    padding: 0.75rem 1rem;
+    text-align: left;
+}
+
+th {
+    background-color: var(--bg-color);
+    font-weight: 600;
+    color: var(--heading-color);
+}
+
+tr:nth-child(even) {
+    background-color: #f8fafc;
+}
+
+blockquote {
+    margin: 0 0 1.5rem 0;
+    padding: 1rem 1.5rem;
+    border-left: 4px solid var(--accent-color);
+    background-color: var(--bg-color);
+    color: var(--text-muted);
+    font-style: italic;
+    border-radius: 0 0.5rem 0.5rem 0;
+}
+
+hr {
+    border: 0;
+    border-top: 1px solid var(--border-color);
+    margin: 2rem 0;
+}
+
+@media (max-width: 768px) {
+    .container {
+        padding: 30px 20px;
+    }
+    h1 {
+        font-size: 2.25rem;
+    }
+}
+
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Excel to PDF Batch Converter (Multiprocessing Edition)</h1>
+<p>This Python script (<code>convert_pywin32.py</code>) provides a robust, high-performance solution for batch converting large numbers of Excel files (<code>.xlsx</code>, <code>.xls</code>) to PDF documents. It is specifically designed to run on Windows systems (such as Windows Server 2022) and uses Python's multiprocessing capabilities to dramatically speed up conversion times.</p>
+<h2>Key Features</h2>
+<ul>
+<li><strong>Blazing Fast Multiprocessing:</strong> Automatically detects the number of CPU cores (virtual processors) on your machine and runs concurrent Excel instances. For example, on an 8-core server, it processes 7 Excel files simultaneously, leaving 1 core free for system stability.</li>
+<li><strong>Smart Overwrite Prevention:</strong> Automatically detects if a PDF document has already been generated. If so, it instantly bypasses the file without needlessly launching Excel, saving massive amounts of processing time on subsequent runs.</li>
+<li><strong>Strict Background Execution:</strong> Uses advanced COM configuration (<code>DispatchEx</code>) to launch completely isolated, hidden instances of Excel. It strictly enforces background rules to prevent open pop-ups, alerts, or macros from interrupting the batch process.</li>
+<li><strong>Entire Workbook Export:</strong> Ensures that every visible worksheet within an Excel file is exported into a single, cohesive PDF document.</li>
+<li><strong>Comprehensive Summary Report:</strong> Consolidates all success and error messages into a clean summary printed to the console upon completion.</li>
+</ul>
+<h2>System Requirements</h2>
+<ul>
+<li><strong>Operating System:</strong> Windows (e.g., Windows 10, Windows 11, Windows Server 2019/2022).</li>
+<li><strong>Microsoft Excel:</strong> A licensed version of Microsoft Excel <em>must</em> be installed on the machine. (The script interacts directly with the actual Excel desktop application under the hood).</li>
+<li><strong>Python:</strong> Python 3.7 or higher.</li>
+<li><strong>Python Packages:</strong> You must install the <code>pywin32</code> library to communicate with the Excel application.
+  <code>bash
+  pip install pywin32</code></li>
+</ul>
+<h2>Usage</h2>
+<ol>
+<li>Move the <code>convert_pywin32.py</code> script to your local machine or Windows Server.</li>
+<li>Open <code>convert_pywin32.py</code> in your chosen text editor or IDE.</li>
+<li>Modify the configuration paths located at the very top of the script:</li>
+</ol>
+<pre><code class="language-python"># ==========================================
+# CONFIGURATION
+# ==========================================
+# Define your input folder here. PDFs will be saved in the same directory.
+INPUT_DIR = r&quot;c:\Users\yckde\Documents\GitHub\excel_pdf\test&quot;
+# Define the folder where summary reports will be saved
+REPORT_DIR = r&quot;c:\Users\yckde\Documents\GitHub\excel_pdf\reports&quot;
+# Configure which drive letter to map the path to bypass long path limits
+MAPPED_DRIVE_LETTER = &quot;M:&quot;
+# Set the maximum number of parallel processes. Leave as &quot;&quot; or None to automatically use (Total CPU Cores - 1).
+MAX_PROCESSES = &quot;&quot;
+# ==========================================
+</code></pre>
+<ol>
+<li>Run the script from the command prompt, PowerShell, or your IDE:</li>
+</ol>
+<pre><code class="language-bash">python convert_pywin32.py
+</code></pre>
+<h2>How It Works Under the Hood</h2>
+<p>The script utilizes a combination of built-in Python multiprocessing and direct COM (Component Object Model) interactions to achieve true parallel processing of Excel files.</p>
+<h3>1. Process Management (<code>multiprocessing</code>)</h3>
+<p>The script uses <code>multiprocessing.Pool</code> to manage concurrent workers. The pool size is determined dynamically:
+<code>num_processes = max(1, multiprocessing.cpu_count() - 1)</code>
+This ensures maximum throughput (e.g., 7 workers on an 8-core machine) while dedicating 1 core to system stability. <code>pool.imap_unordered</code> is used to stream results back as soon as each individual file finishes, rather than waiting for the entire batch to complete before displaying feedback.</p>
+<h3>2. COM Initialization (<code>pythoncom</code>)</h3>
+<p>Because the Component Object Model (COM) in Windows is thread-aware and process-bound, each worker process <em>must</em> initialize its own COM apartment.
+<code>pythoncom.CoInitialize()</code>
+Without this step, <code>multiprocessing</code> worker threads will fail to communicate with the OS when attempting to launch Excel.</p>
+<h3>3. Isolated Excel Instances (<code>win32com.client.DispatchEx</code>)</h3>
+<p>Unlike simple automation tasks that attach to an existing, open Excel window, batch processing requires isolation.
+<code>excel = win32com.client.DispatchEx('Excel.Application')</code>
+<code>DispatchEx</code> forces Windows to spawn a completely separate <code>EXCEL.EXE</code> process in memory for <em>each</em> parallel worker. If one file crashes or contains a corrupted macro, it does not bring down the other files currently processing in parallel.</p>
+<h3>4. Strict Background Execution</h3>
+<p>To prevent hidden Excel processes from hanging (waiting for user input on dialog boxes), the script ruthlessly disables the UI and standard warnings:</p>
+<pre><code class="language-python">excel.Visible = False
+excel.DisplayAlerts = False
+excel.EnableEvents = False
+excel.Interactive = False
+</code></pre>
+<h3>5. Advanced Long-Path Bypass (<code>net use</code>)</h3>
+<p>Windows Excel COM Automation has a hardcoded internal limit of 218 characters for file paths. To bypass this and support deeply nested network folders, this script sequentially reads your target directories from <code>config.xlsx</code>, maps each input folder to a temporary <code>M:\</code> drive using <code>net use</code>, processes all files safely through this short path, and then unmaps the drive before repeating for the next directory in your configuration list.</p>
+<p>To ensure stability across crashes, the script implements proactive networking cleanup:
+- Before mapping, it forcibly executes <code>net use M: /delete /y</code> to clear out any abandoned drives from previous runs.
+- After processing, it not only deletes the <code>M:</code> drive but also explicitly runs <code>net use "Input Path" /delete /y</code> to sever lingering background UNC connections.</p>
+<h3>6. PDF Export Generation</h3>
+<p>The script uses the native Excel function <code>ExportAsFixedFormat</code> with <code>Type=0</code> (<code>xlTypePDF</code>). The <code>0</code> argument is critical, as it bypasses page-by-page printing and signals Excel to dump the <em>entire workbook</em> (all visible sheets) sequentially into a single PDF output file.</p>
+<h3>7. Pandas Export &amp; Summary Report</h3>
+<p>While processing, the script gathers detailed telemetry (start time, end time, elapsed seconds, and error reasons). Once all files are processed, it uses <code>pandas</code> to compile this data into a structured DataFrame. Any temporary <code>M:\</code> drive paths used for the long-path bypass are automatically translated back to their full, original directory paths inside the report. This data is then exported into your designated <code>REPORT_DIR</code>. The file is dynamically named using the script's exact start time (e.g., <code>report_2026_03_12_22_45.xlsx</code>) for easy auditing and record-keeping without overwriting previous runs.</p>
+<h3>8. Memory Cleanup</h3>
+<p>A crucial final step is <code>excel.Quit()</code> combined with <code>pythoncom.CoUninitialize()</code>. This ensures that once the PDF is generated, the detached <code>EXCEL.EXE</code> background process is immediately killed, freeing up RAM for the next file in the multiprocessing queue.</p>
+    </div>
+    <!-- highlight.js Library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/highlight.min.js"></script>
+    <script>hljs.highlightAll();</script>
+</body>
+</html>

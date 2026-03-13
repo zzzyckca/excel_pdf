@@ -5,6 +5,7 @@ This Python script (`convert_pywin32.py`) provides a robust, high-performance so
 ## Key Features
 
 - **Blazing Fast Multiprocessing:** Automatically detects the number of CPU cores (virtual processors) on your machine and runs concurrent Excel instances. For example, on an 8-core server, it processes 7 Excel files simultaneously, leaving 1 core free for system stability.
+- **Smart Overwrite Prevention:** Automatically detects if a PDF document has already been generated. If so, it instantly bypasses the file without needlessly launching Excel, saving massive amounts of processing time on subsequent runs.
 - **Strict Background Execution:** Uses advanced COM configuration (`DispatchEx`) to launch completely isolated, hidden instances of Excel. It strictly enforces background rules to prevent open pop-ups, alerts, or macros from interrupting the batch process.
 - **Entire Workbook Export:** Ensures that every visible worksheet within an Excel file is exported into a single, cohesive PDF document.
 - **Comprehensive Summary Report:** Consolidates all success and error messages into a clean summary printed to the console upon completion.
@@ -24,24 +25,27 @@ This Python script (`convert_pywin32.py`) provides a robust, high-performance so
 1. Move the `convert_pywin32.py` script to your local machine or Windows Server.
 2. Open `convert_pywin32.py` in your chosen text editor or IDE.
 3. Modify the configuration paths located at the very top of the script:
-   ```python
-   # ==========================================
-   # CONFIGURATION
-   # ==========================================
-   # Define your input folder here. PDFs will be saved in the same directory.
-   INPUT_DIR = r"c:\Users\yckde\Documents\GitHub\excel_pdf\test"
-   # Define the folder where summary reports will be saved
-   REPORT_DIR = r"c:\Users\yckde\Documents\GitHub\excel_pdf\reports"
-   # Configure which drive letter to map the path to bypass long path limits
-   MAPPED_DRIVE_LETTER = "M:"
-   # Set the maximum number of parallel processes. Leave as "" or None to automatically use (Total CPU Cores - 1).
-   MAX_PROCESSES = ""
-   # ==========================================
-   ```
+
+```python
+# ==========================================
+# CONFIGURATION
+# ==========================================
+# Define your input folder here. PDFs will be saved in the same directory.
+INPUT_DIR = r"c:\Users\yckde\Documents\GitHub\excel_pdf\test"
+# Define the folder where summary reports will be saved
+REPORT_DIR = r"c:\Users\yckde\Documents\GitHub\excel_pdf\reports"
+# Configure which drive letter to map the path to bypass long path limits
+MAPPED_DRIVE_LETTER = "M:"
+# Set the maximum number of parallel processes. Leave as "" or None to automatically use (Total CPU Cores - 1).
+MAX_PROCESSES = ""
+# ==========================================
+```
+
 4. Run the script from the command prompt, PowerShell, or your IDE:
-   ```bash
-   python convert_pywin32.py
-   ```
+
+```bash
+python convert_pywin32.py
+```
 
 ## How It Works Under the Hood
 
@@ -72,7 +76,7 @@ excel.Interactive = False
 ```
 
 ### 5. Advanced Long-Path Bypass (`net use`)
-Windows Excel COM Automation has a hardcoded internal limit of 218 characters for file paths. To bypass this and support deeply nested network folders, this script automatically maps your `INPUT_DIR` to a temporary `M:\` drive using `net use` at startup, processes all files safely through this short path, and then unmaps the drive when finished.
+Windows Excel COM Automation has a hardcoded internal limit of 218 characters for file paths. To bypass this and support deeply nested network folders, this script sequentially reads your target directories from `config.xlsx`, maps each input folder to a temporary `M:\` drive using `net use`, processes all files safely through this short path, and then unmaps the drive before repeating for the next directory in your configuration list.
 
 To ensure stability across crashes, the script implements proactive networking cleanup:
 - Before mapping, it forcibly executes `net use M: /delete /y` to clear out any abandoned drives from previous runs.
