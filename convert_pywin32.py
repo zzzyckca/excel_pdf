@@ -239,27 +239,27 @@ def main():
                 print(f" - {f}: {err}")
         print("=" * 60)
     
-    # Export to Pandas DataFrame and Excel
-    if summary_data:
-        print("\nExporting Summary Report to Excel...")
-        df = pd.DataFrame(summary_data)
-        
-        # Create the report directory if it does not exist
-        if not os.path.exists(REPORT_DIR):
-            os.makedirs(REPORT_DIR)
+        # Export to Pandas DataFrame and Excel
+        if summary_data:
+            print("\nExporting Summary Report to Excel...")
+            df = pd.DataFrame(summary_data)
             
-        # Generate the report filename based on the layout: report_YYYY_MM_DD_HH_MM.xlsx
-        start_dt_obj = datetime.fromtimestamp(overall_start_time)
-        report_filename = start_dt_obj.strftime("report_%Y_%m_%d_%H_%M.xlsx")
-        
-        # Save it explicitly to the REPORT_DIR
-        report_path = os.path.join(REPORT_DIR, report_filename)
-        
-        try:
-            df.to_excel(report_path, index=False)
-            print(f"[OK] Saved Excel report to: {report_path}")
-        except Exception as e:
-            print(f"[FAIL] Failed to save Excel report: {e}")
+            # Create the report directory if it does not exist
+            if not os.path.exists(REPORT_DIR):
+                os.makedirs(REPORT_DIR)
+                
+            # Generate the report filename based on the layout: report_YYYY_MM_DD_HH_MM.xlsx
+            start_dt_obj = datetime.fromtimestamp(overall_start_time)
+            report_filename = start_dt_obj.strftime("report_%Y_%m_%d_%H_%M.xlsx")
+            
+            # Save it explicitly to the REPORT_DIR
+            report_path = os.path.join(REPORT_DIR, report_filename)
+            
+            try:
+                df.to_excel(report_path, index=False)
+                print(f"[OK] Saved Excel report to: {report_path}")
+            except Exception as e:
+                print(f"[FAIL] Failed to save Excel report: {e}")
 
     finally:
         # Guarantee the drive is unmapped at the very end regardless of success or crash
