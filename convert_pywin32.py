@@ -2,19 +2,55 @@ import win32com.client
 import time
 import os
 import glob
-import multiprocessing
 import traceback
 import pythoncom
+import subprocess
 from pathlib import Path
 from datetime import datetime
 import pandas as pd
+import sys
 
 # ==========================================
 # CONFIGURATION
 # ==========================================
 # Define your input folder here. PDFs will be saved in the same directory.
 INPUT_DIR = r"c:\Users\yckde\Documents\GitHub\excel_pdf\test"
+# Configure which drive letter to map the path to bypass long path limits
+MAPPED_DRIVE_LETTER = "M:"
 # ==========================================
+
+def map_drive(input_dir):
+    """
+    Maps a folder to MAPPED_DRIVE_LETTER using 'net use'.
+    Returns the mapped path (e.g., 'M:\\') or None if it failed.
+    """
+    input_dir = os.path.abspath(input_dir)
+    
+    # Proactively unmap the drive in case it was left over from a previous crash
+    subprocess.run(f'net use {MAPPED_DRIVE_LETTER} /delete /y', shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    
+    print(f"\n[*] Mapping temporary drive '{MAPPED_DRIVE_LETTER}' to '{input_dir}' using 'net use'...")
+    try:
+        cmd = f'net use {MAPPED_DRIVE_LETTER} "{input_dir}" /persistent:no'
+        subprocess.run(cmd, shell=True, check=True, stdout=subprocess.DEVNULL)
+        return MAPPED_DRIVE_LETTER + "\\"
+    except subprocess.CalledProcessError as e:
+        print(f"[!] Failed to map drive with net use: {e}. Proceeding with original path.")
+        return None
+
+def unmap_drive(input_dir):
+    """Unmaps the MAPPED_DRIVE_LETTER and the input_dir network connection."""
+    print(f"[*] Unmapping temporary drive '{MAPPED_DRIVE_LETTER}'...")
+    try:
+        subprocess.run(f'net use {MAPPED_DRIVE_LETTER} /delete /y', shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    except Exception as e:
+        print(f"[!] Failed to unmap drive {MAPPED_DRIVE_LETTER}: {e}")
+        
+    print(f"[*] Disconnecting network path '{input_dir}'...")
+    try:
+        subprocess.run(f'net use "{input_dir}" /delete /y', shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    except Exception as e:
+        print(f"[!] Failed to disconnect path: {e}")
 
 def convert_file(file_path):
     """
@@ -38,19 +74,13 @@ def convert_file(file_path):
     excel.EnableEvents = False
     excel.Interactive = False
     
-    # Use Windows long path syntax to bypass 260 char limit
     abs_file_path = os.path.abspath(file_path)
-    if not abs_file_path.startswith(r"\\?\"):
-        abs_file_path = r"\\?\""[:-1] + abs_file_path
-        
     file_name_with_ext = os.path.basename(file_path)
     file_name = os.path.splitext(file_name_with_ext)[0]
     
-    # Generate output path and also apply long path syntax
+    # Generate output path
     output_pdf_dir = os.path.dirname(os.path.abspath(file_path))
     output_pdf_path = os.path.join(output_pdf_dir, f"{file_name}.pdf")
-    if not output_pdf_path.startswith(r"\\?\"):
-        output_pdf_path = r"\\?\""[:-1] + output_pdf_path
     
     start_time = time.time()
     start_dt = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -102,88 +132,102 @@ def main():
         print(f"ERROR: Input folder '{input_dir}' does not exist.")
         return
         
-    input_path = Path(input_dir)
-    # Recursively find all supported Excel files
-    excel_files = []
-    for ext in ['*.xls', '*.xlsx', '*.xlsm']:
-        excel_files.extend([str(p) for p in input_path.rglob(ext)])
+    mapped_successfully = False
     
-    if not excel_files:
-        print(f"No Excel files found in {input_dir}")
-        return
-        
-    print(f"Found {len(excel_files)} Excel file(s).")
-    
-    # Determine number of processes (use max cores - 1 to leave room for OS, or at least 1)
-    num_processes = max(1, multiprocessing.cpu_count() - 1)
-    print(f"Starting conversion using {num_processes} parallel process(es)...")
-    print("-" * 60)
-    
-    # Prepare arguments for the worker function
-    pool_args = excel_files
-    
-    success_count = 0
-    error_count = 0
-    failed_files = []
-    summary_data = []
+    # Map the drive dynamically right at the start before any processing
+    mapped_path = map_drive(input_dir)
+    if mapped_path:
+        input_dir = mapped_path
+        mapped_successfully = True
 
-    overall_start_time = time.time()
+    try:
+        success_count = 0
+        error_count = 0
+        failed_files = []
+        summary_data = []
     
-    # Run the multiprocessing pool
-    with multiprocessing.Pool(processes=num_processes) as pool:
-        # pool.imap_unordered yields results as soon as they are ready
-        for result in pool.imap_unordered(convert_file, pool_args):
-            success, filename, abs_path, err_msg, start_dt, end_dt, elapsed = result
-            
-            # Add to pandas collection dictionary
-            row_status = "SUCCESS" if success else "FAILED"
-            summary_data.append({
-                "file_name": filename,
-                "file_full_path": abs_path,
-                "status": row_status,
-                "start_time": start_dt,
-                "completed/failure_time": end_dt,
-                "number of seconds": round(elapsed, 2)
-            })
-            
-            if success:
-                print(f"[✓] SUCCESS : {filename} (in {elapsed:.2f}s)")
-                success_count += 1
-            else:
-                print(f"[x] ERROR   : {filename} - {err_msg}")
-                error_count += 1
-                failed_files.append((filename, err_msg))
-
-    overall_end_time = time.time()
-    total_elapsed = overall_end_time - overall_start_time
-    
-    # Summary Report
-    print("\n" + "=" * 60)
-    print("SUMMARY REPORT")
-    print("=" * 60)
-    print(f"Total Files Processed : {len(excel_files)}")
-    print(f"Successful Conversions: {success_count}")
-    print(f"Failed Conversions    : {error_count}")
-    print(f"Total Time Elapsed    : {total_elapsed / 60:.2f} minutes ({total_elapsed:.2f} seconds)")
-    
-    if failed_files:
-        print("\nFailed Files Details:")
-        for f, err in failed_files:
-            print(f" - {f}: {err}")
-    print("=" * 60)
-    
-    # Export to Pandas DataFrame and Excel
-    if summary_data:
-        print("\nExporting Summary Report to Excel...")
-        df = pd.DataFrame(summary_data)
+        overall_start_time = time.time()
         
-        # Decide the name and path of the output log Excel file
-        report_path = os.path.join(input_dir, "conversion_summary_report.xlsx")
-        try:
-            df.to_excel(report_path, index=False)
-            print(f"[✓] Saved Excel report to: {report_path}")
-        except Exception as e:
-            print(f"[x] Failed to save Excel report: {e}")
+        mapped_path_obj = Path(input_dir)
+        
+        # Search the files inside the globally mapped path
+        excel_files = []
+        for ext in ['*.xls', '*.xlsx', '*.xlsm']:
+            excel_files.extend([str(p) for p in mapped_path_obj.rglob(ext)])
+            
+        if not excel_files:
+            print(f"No Excel files found in {input_dir}")
+            return
+            
+        print(f"Found {len(excel_files)} Excel file(s).")
+        
+        # Determine number of processes (use max cores - 1 to leave room for OS, or at least 1)
+        num_processes = max(1, multiprocessing.cpu_count() - 1)
+        print(f"Starting conversion using {num_processes} parallel process(es)...")
+        print("-" * 60)
+        
+        # Run the multiprocessing pool
+        with multiprocessing.Pool(processes=num_processes) as pool:
+            # pool.imap_unordered yields results as soon as they are ready
+            for result in pool.imap_unordered(convert_file, excel_files):
+                success, filename, abs_path, err_msg, start_dt, end_dt, elapsed = result
+                
+                # Add to pandas collection dictionary
+                row_status = "SUCCESS" if success else "FAILED"
+                summary_data.append({
+                    "file_name": filename,
+                    "file_full_path": abs_path,
+                    "status": row_status,
+                    "start_time": start_dt,
+                    "completed/failure_time": end_dt,
+                    "number of seconds": round(elapsed, 2)
+                })
+                
+                if success:
+                    print(f"[✓] SUCCESS : {filename} (in {elapsed:.2f}s)")
+                    success_count += 1
+                else:
+                    print(f"[x] ERROR   : {filename} - {err_msg}")
+                    error_count += 1
+                    failed_files.append((filename, err_msg))
+    
+        overall_end_time = time.time()
+        total_elapsed = overall_end_time - overall_start_time
+        
+        # Summary Report
+        print("\n" + "=" * 60)
+        print("SUMMARY REPORT")
+        print("=" * 60)
+        print(f"Total Files Processed : {len(excel_files)}")
+        print(f"Successful Conversions: {success_count}")
+        print(f"Failed Conversions    : {error_count}")
+        print(f"Total Time Elapsed    : {total_elapsed / 60:.2f} minutes ({total_elapsed:.2f} seconds)")
+        
+        if failed_files:
+            print("\nFailed Files Details:")
+            for f, err in failed_files:
+                print(f" - {f}: {err}")
+        print("=" * 60)
+        
+        # Export to Pandas DataFrame and Excel
+        if summary_data:
+            print("\nExporting Summary Report to Excel...")
+            df = pd.DataFrame(summary_data)
+            
+            # Since input_dir might be "M:\", we need to make sure we don't save to the root of a drive letter if possible
+            # Save it explicitly to the original unmapped location so it's easy to find
+            report_path = os.path.join(INPUT_DIR, "conversion_summary_report.xlsx")
+            
+            try:
+                df.to_excel(report_path, index=False)
+                print(f"[✓] Saved Excel report to: {report_path}")
+            except Exception as e:
+                print(f"[x] Failed to save Excel report: {e}")
+
+    finally:
+        # Guarantee the drive is unmapped at the very end regardless of success or crash
+        if mapped_successfully:
+            unmap_drive(INPUT_DIR)
 
 if __name__ == "__main__":
     # Ensure Windows multiprocessing compatibility

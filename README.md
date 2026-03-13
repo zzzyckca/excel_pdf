@@ -65,8 +65,18 @@ excel.EnableEvents = False
 excel.Interactive = False
 ```
 
-### 5. PDF Export Generation
+### 5. Advanced Long-Path Bypass (`net use`)
+Windows Excel COM Automation has a hardcoded internal limit of 218 characters for file paths. To bypass this and support deeply nested network folders, this script automatically maps your `INPUT_DIR` to a temporary `M:\` drive using `net use` at startup, processes all files safely through this short path, and then unmaps the drive when finished.
+
+To ensure stability across crashes, the script implements proactive networking cleanup:
+- Before mapping, it forcibly executes `net use M: /delete /y` to clear out any abandoned drives from previous runs.
+- After processing, it not only deletes the `M:` drive but also explicitly runs `net use "Input Path" /delete /y` to sever lingering background UNC connections.
+
+### 6. PDF Export Generation
 The script uses the native Excel function `ExportAsFixedFormat` with `Type=0` (`xlTypePDF`). The `0` argument is critical, as it bypasses page-by-page printing and signals Excel to dump the *entire workbook* (all visible sheets) sequentially into a single PDF output file.
 
-### 6. Memory Cleanup
+### 7. Pandas Export & Summary Report
+While processing, the script gathers detailed telemetry (start time, end time, elapsed seconds, and error reasons). Once all files are processed, it uses `pandas` to compile this data into a structured DataFrame. This data is then exported as a `conversion_summary_report.xlsx` file inside the root of your `INPUT_DIR` for easy auditing.
+
+### 8. Memory Cleanup
 A crucial final step is `excel.Quit()` combined with `pythoncom.CoUninitialize()`. This ensures that once the PDF is generated, the detached `EXCEL.EXE` background process is immediately killed, freeing up RAM for the next file in the multiprocessing queue.
