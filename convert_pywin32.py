@@ -5,6 +5,7 @@ import glob
 import multiprocessing
 import traceback
 import pythoncom
+from pathlib import Path
 
 # ==========================================
 # CONFIGURATION
@@ -88,7 +89,11 @@ def main():
         print(f"ERROR: Input folder '{input_dir}' does not exist.")
         return
         
-    excel_files = glob.glob(os.path.join(input_dir, "*.xls*"))
+    input_path = Path(input_dir)
+    # Recursively find all supported Excel files
+    excel_files = []
+    for ext in ['*.xls', '*.xlsx', '*.xlsm']:
+        excel_files.extend([str(p) for p in input_path.rglob(ext)])
     
     if not excel_files:
         print(f"No Excel files found in {input_dir}")
