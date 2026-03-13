@@ -6,6 +6,8 @@ import multiprocessing
 import traceback
 import pythoncom
 from pathlib import Path
+from datetime import datetime
+import pandas as pd
 
 # ==========================================
 # CONFIGURATION
@@ -36,12 +38,22 @@ def convert_file(file_path):
     excel.EnableEvents = False
     excel.Interactive = False
     
+    # Use Windows long path syntax to bypass 260 char limit
     abs_file_path = os.path.abspath(file_path)
-    file_name_with_ext = os.path.basename(abs_file_path)
+    if not abs_file_path.startswith(r"\\?\"):
+        abs_file_path = r"\\?\""[:-1] + abs_file_path
+        
+    file_name_with_ext = os.path.basename(file_path)
     file_name = os.path.splitext(file_name_with_ext)[0]
-    output_pdf_path = os.path.abspath(os.path.join(os.path.dirname(abs_file_path), f"{file_name}.pdf"))
+    
+    # Generate output path and also apply long path syntax
+    output_pdf_dir = os.path.dirname(os.path.abspath(file_path))
+    output_pdf_path = os.path.join(output_pdf_dir, f"{file_name}.pdf")
+    if not output_pdf_path.startswith(r"\\?\"):
+        output_pdf_path = r"\\?\""[:-1] + output_pdf_path
     
     start_time = time.time()
+    start_dt = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     wb = None
     success = False
     error_msg = ""
@@ -73,9 +85,10 @@ def convert_file(file_path):
         pythoncom.CoUninitialize()
         
     end_time = time.time()
+    end_dt = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     elapsed = end_time - start_time
     
-    return success, file_name_with_ext, error_msg, elapsed
+    return success, file_name_with_ext, abs_file_path, error_msg, start_dt, end_dt, elapsed
 
 def main():
     print("-" * 50)
@@ -112,14 +125,27 @@ def main():
     success_count = 0
     error_count = 0
     failed_files = []
-    
+    summary_data = []
+
     overall_start_time = time.time()
     
     # Run the multiprocessing pool
     with multiprocessing.Pool(processes=num_processes) as pool:
         # pool.imap_unordered yields results as soon as they are ready
         for result in pool.imap_unordered(convert_file, pool_args):
-            success, filename, err_msg, elapsed = result
+            success, filename, abs_path, err_msg, start_dt, end_dt, elapsed = result
+            
+            # Add to pandas collection dictionary
+            row_status = "SUCCESS" if success else "FAILED"
+            summary_data.append({
+                "file_name": filename,
+                "file_full_path": abs_path,
+                "status": row_status,
+                "start_time": start_dt,
+                "completed/failure_time": end_dt,
+                "number of seconds": round(elapsed, 2)
+            })
+            
             if success:
                 print(f"[✓] SUCCESS : {filename} (in {elapsed:.2f}s)")
                 success_count += 1
@@ -145,6 +171,19 @@ def main():
         for f, err in failed_files:
             print(f" - {f}: {err}")
     print("=" * 60)
+    
+    # Export to Pandas DataFrame and Excel
+    if summary_data:
+        print("\nExporting Summary Report to Excel...")
+        df = pd.DataFrame(summary_data)
+        
+        # Decide the name and path of the output log Excel file
+        report_path = os.path.join(input_dir, "conversion_summary_report.xlsx")
+        try:
+            df.to_excel(report_path, index=False)
+            print(f"[✓] Saved Excel report to: {report_path}")
+        except Exception as e:
+            print(f"[x] Failed to save Excel report: {e}")
 
 if __name__ == "__main__":
     # Ensure Windows multiprocessing compatibility
